@@ -5,15 +5,15 @@ A VSTi that transforms input MIDI to polyphonic xenharmonic MPE MIDI.
 
 Parameters
 
-Xen: The xen scale describes how many pitch classes per octave exist. The most common xen scale is 12tet / 12edo.
-Base Pitch: The base- or reference pitch is the same in all xen scales that you choose.
-Master Tune: You can retune the notes by a few hz with this parameter.
-Pitchbend Range: This parameter has to be aligned with the MPE pitchbend range of the target synth.
-Auto MPE: If this is enabled you don't need to input notes with manually seperated MIDI channels.
-Playmode:
+- Xen: The xen scale describes how many pitch classes per octave exist. The most common xen scale is 12tet / 12edo.
+- Base Pitch: The base- or reference pitch is the same in all xen scales that you choose.
+- Master Tune: You can retune the notes by a few hz with this parameter.
+- Pitchbend Range: This parameter has to be aligned with the MPE pitchbend range of the target synth.
+- Auto MPE: If this is enabled you don't need to input notes with manually seperated MIDI channels.
+- Playmode:
 1. The "Rescale" mode just rescales every one of the 128 MIDI values to a distinct pitch in the xen scale.
 2. The "Nearest" mode retunes the incoming notes to the nearest pitch of the played key's 12tet interpretation.
-Use Synth: If enabled the plugin outputs audio, so that you can test if everything works correctly.
+- Use Synth: If enabled the plugin outputs audio, so that you can test if everything works correctly.
 
 
 
