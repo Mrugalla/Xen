@@ -33,4 +33,4 @@ How to use
 Known issues
 
 - Plugin doesn't work in Bitwig, because Bitwig doesn't support VST3 plugins outputting pitchbend.
-- In Cubase the timing of the output MIDI seems a bit wrong. Idk why. I don't mess with the timing at all in my code.
+- In Cubase the timing of the output MIDI is messed up after it loops for some reason.
