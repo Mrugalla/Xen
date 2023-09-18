@@ -1,7 +1,7 @@
 # Xen
 A VSTi that transforms input MIDI to polyphonic xenharmonic MPE MIDI.
 
-~~~ Parameters ~~~
+--- Parameters ---
 
 Xen: The xen scale describes how many pitch classes per octave exist. The most common xen scale is 12tet / 12edo.
 Base Pitch: The base- or reference pitch is the same in all xen scales that you choose.
@@ -13,7 +13,8 @@ Playmode:
 2. The "Nearest" mode retunes the incoming notes to the nearest pitch of the played key's 12tet interpretation.
 Use Synth: If enabled the plugin outputs audio, so that you can test if everything works correctly.
 
-~~~ How to use: ~~~
+-------------------
+--- How to use: ---
 
 1. Instantiate Xen as an instrument plugin.
 2. Instantiate an instance of your MPE-compatible target synth.
@@ -23,3 +24,9 @@ Use Synth: If enabled the plugin outputs audio, so that you can test if everythi
 6. Use Xen's internal synth to check if it works.
 7. If some pitches are wrong you need to align the pitchbend range.
 8. success :)
+
+---------------------
+--- Known issues: ---
+
+- Plugin doesn't work in Bitwig, because Bitwig doesn't support VST3 plugins outputting pitchbend.
+- In Cubase the timing of the output MIDI seems a bit wrong. Idk why. I don't mess with the timing at all in my code.
