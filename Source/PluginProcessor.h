@@ -1,0 +1,111 @@
+#pragma once
+
+#define oopsie(condition) jassert(!(condition))
+
+#include <JuceHeader.h>
+#include "MPESplit.h"
+#include "AutoMPE.h"
+#include "Synth.h"
+#include "XenRescaler.h"
+#include <array>
+
+class XenAudioProcessor : public juce::AudioProcessor
+                            #if JucePlugin_Enable_ARA
+                             , public juce::AudioProcessorARAExtension
+                            #endif
+{
+public:
+    //==============================================================================
+    XenAudioProcessor();
+    ~XenAudioProcessor() override;
+
+    //==============================================================================
+    void prepareToPlay (double sampleRate, int samplesPerBlock) override;
+    void releaseResources() override;
+
+   #ifndef JucePlugin_PreferredChannelConfigurations
+    bool isBusesLayoutSupported (const BusesLayout& layouts) const override;
+   #endif
+
+    void processBlock (juce::AudioBuffer<float>&, juce::MidiBuffer&) override;
+
+    //==============================================================================
+    juce::AudioProcessorEditor* createEditor() override;
+    bool hasEditor() const override;
+
+    //==============================================================================
+    const juce::String getName() const override;
+
+    bool acceptsMidi() const override;
+    bool producesMidi() const override;
+    bool isMidiEffect() const override;
+    double getTailLengthSeconds() const override;
+
+    //==============================================================================
+    int getNumPrograms() override;
+    int getCurrentProgram() override;
+    void setCurrentProgram (int index) override;
+    const juce::String getProgramName (int index) override;
+    void changeProgramName (int index, const juce::String& newName) override;
+
+    //==============================================================================
+    void getStateInformation (juce::MemoryBlock& destData) override;
+    void setStateInformation (const void* data, int sizeInBytes) override;
+
+    juce::AudioProcessorValueTreeState apvts;
+    juce::RangedAudioParameter &xen, &basePitch, &masterTune, &pbRange, &autoMPE, &playMode, &useSynth;
+
+    mpe::AutoMPE autoMPEProcessor;
+    mpe::MPESplit mpeSplit;
+    syn::XenSynthMPE synth;
+    xen::XenRescalerMPE xenRescaler;
+
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (XenAudioProcessor)
+};
+
+/*
+--- todo ---
+
+bugs:
+	still need to test if edge cases like bypass can make notes hang etc
+    mild timing problems in cubase
+
+parameters:
+
+features:
+
+workflow:
+    GUI
+
+Tested in Synths:
+    vital       >> works
+    serum       >> works
+    karp        >> works, need to check pitchbend issue
+
+Tested in DAWs:
+    cubase      >> works, but timing issues
+    reaper      >> ?
+    studio one  >> ?
+    ableton     >> ?
+    fl studio   >> works :)
+    bitwig      >> only allows note expression via clap :<
+
+How to use in different DAWs:
+    Cubase:
+        Make instrument track: Xen.
+        Make instrument track: Target Synth (Vital/Serum/whatever)
+        MIDI input on Target Synth: Xen's MIDI Output.
+        Set MIDI Channels to 'all'.
+    FL:
+        Click the cogwheel icon in the xen plugin bar.
+        Open the 2nd tab (its called vst wrapper settings on hover)
+        there choose a midi output port.
+        Same procedure for the receiving plugin,
+        just use the chosen port for input in the same menu
+    Reaper:
+	    Place Xen before instrument in plugin chain.
+    Ableton:
+	    Check in pivo guide: https://www.dmitrivolkov.com/projects/pivotuner/Pivotuner_Guide.pdf p7
+    Bitwig:
+        with MTS-ESP maybe.
+*/
