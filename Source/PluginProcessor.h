@@ -7,7 +7,7 @@
 #include "AutoMPE.h"
 #include "Synth.h"
 #include "XenRescaler.h"
-#include <array>
+#include "NoteDelay.h"
 
 class XenAudioProcessor : public juce::AudioProcessor
                             #if JucePlugin_Enable_ARA

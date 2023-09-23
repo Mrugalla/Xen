@@ -15,6 +15,7 @@
       <FILE id="q7ARql" name="AutoMPE.h" compile="0" resource="0" file="Source/AutoMPE.h"/>
       <FILE id="lE52WJ" name="Synth.h" compile="0" resource="0" file="Source/Synth.h"/>
       <FILE id="homd6S" name="XenRescaler.h" compile="0" resource="0" file="Source/XenRescaler.h"/>
+      <FILE id="Hbx2Bl" name="NoteDelay.h" compile="0" resource="0" file="Source/NoteDelay.h"/>
       <FILE id="NY6uE1" name="PluginProcessor.cpp" compile="1" resource="0"
             file="Source/PluginProcessor.cpp"/>
       <FILE id="Uaazuj" name="PluginProcessor.h" compile="0" resource="0"

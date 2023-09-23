@@ -14,7 +14,7 @@ namespace math
 		return basePitch + xen * std::log2(freq / masterTune);
 	}
 
-	double closestFreq(double freq, double xen = 12., double basePitch = 69., double masterTune = 400.) noexcept
+	double closestFreq(double freq, double xen = 12., double basePitch = 69., double masterTune = 440.) noexcept
 	{
 		auto closestFreq = 0.;
 		auto closestDist = std::numeric_limits<double>::max();
