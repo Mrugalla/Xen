@@ -64,23 +64,29 @@ public:
 };
 
 /*
+--- debug environments ---
+
+D:\PluginDevelopment\JUCE\extras\AudioPluginHost\Builds\VisualStudio2022\x64\Release\App\AudioPluginHost.exe
+C:\Program Files\Steinberg\Cubase 9.5\Cubase9.5.exe
+
 --- todo ---
 
 bugs:
-	still need to test if edge cases like bypass can make notes hang etc
-    mild timing problems in cubase
+	mild timing problems in cubase
 
 parameters:
+    remove master tune?
 
 features:
 
 workflow:
-    GUI
+    make GUI
 
 Tested in Synths:
-    vital       >> works
+    vital       >> works, but on session reopen doesn't remember mpe enabled despite showing it as enabled
     serum       >> works
-    karp        >> works, need to check pitchbend issue
+    karp        >> works
+    surge       >> works
 
 Tested in DAWs:
     cubase      >> works, but timing issues
@@ -89,6 +95,7 @@ Tested in DAWs:
     ableton     >> ?
     fl studio   >> works :)
     bitwig      >> only allows note expression via clap :<
+    logic       >> works as audio unit
 
 How to use in different DAWs:
     Cubase:
