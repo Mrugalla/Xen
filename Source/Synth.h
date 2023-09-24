@@ -151,7 +151,6 @@ namespace syn
 	struct XenSynthMPE
 	{
 		using MPE = mpe::MPESplit;
-		static constexpr int NumChannels = 16;
 
 		XenSynthMPE(MPE& _mpe) :
 			voices(),
@@ -170,18 +169,18 @@ namespace syn
 			bool playModeVal) noexcept
 		{
 			if (playModeVal)
-				for (auto ch = 1; ch <= mpe::NumChannels; ++ch)
+				for (auto ch = 0; ch < mpe::NumChannelsMPE; ++ch)
 				{
-					const auto& midi = mpe[ch];
-					auto& voice = voices[ch - 1];
+					auto& voice = voices[ch];
+					const auto& midi = mpe[ch + 2];
 
 					voice.synthesizeNearest(samples[0], midi, xen, basePitch, masterTune, numSamples);
 				}
 			else
-				for (auto ch = 1; ch <= mpe::NumChannels; ++ch)
+				for (auto ch = 0; ch < mpe::NumChannelsMPE; ++ch)
 				{
-					const auto& midi = mpe[ch];
-					auto& voice = voices[ch - 1];
+					auto& voice = voices[ch];
+					const auto& midi = mpe[ch + 2];
 
 					voice.synthesizeRescale(samples[0], midi, xen, basePitch, masterTune, numSamples);
 				}
@@ -191,7 +190,7 @@ namespace syn
 		}
 
 	private:
-		std::array<XenSynth, NumChannels> voices;
+		std::array<XenSynth, mpe::NumChannelsMPE> voices;
 		MPE& mpe;
 	};
 }

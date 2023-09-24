@@ -5,11 +5,12 @@ namespace mpe
 {
 	struct MPESplit
 	{
+		static constexpr int Size = NumChannels + 1;
+		using Buffers = std::array<MidiBuffer, Size>;
+
 		MPESplit() :
 			buffers()
 		{
-			for (auto& buffer : buffers)
-				buffer.ensureSize(1024);
 		}
 
 		void operator()(MidiBuffer& midiIn)
@@ -17,11 +18,11 @@ namespace mpe
 			for (auto& buffer : buffers)
 				buffer.clear();
 
-			for (const auto midi : midiIn)
+			for (const auto it : midiIn)
 			{
-				const auto msg = midi.getMessage();
+				const auto msg = it.getMessage();
 				const auto ch = msg.getChannel();
-				buffers[ch].addEvent(msg, midi.samplePosition);
+				buffers[ch].addEvent(msg, it.samplePosition);
 			}
 
 			midiIn.swapWith(buffers[kSysex]);
@@ -38,6 +39,6 @@ namespace mpe
 		}
 
 	protected:
-		MidiBuffers buffers;
+		Buffers buffers;
 	};
 }

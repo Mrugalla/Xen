@@ -7,7 +7,6 @@ namespace mpe
 	using MidiBuffer = juce::MidiBuffer;
 	using MidiMessage = juce::MidiMessage;
 	static constexpr int NumChannels = 16;
-	static constexpr int MaxChannel = NumChannels - 1;
-	using MidiBuffers = std::array<MidiBuffer, NumChannels + 1>;
+	static constexpr int NumChannelsMPE = NumChannels - 1;
 	enum { kSysex };
 }

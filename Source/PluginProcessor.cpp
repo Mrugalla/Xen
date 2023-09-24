@@ -52,7 +52,7 @@ static juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout
 	));
     params.push_back(std::make_unique<juce::AudioParameterInt>
     (
-        "pbrange", "Pitchbend Range", 1, 48, 2, "", valToStrSemi
+        "pbrange", "Pitchbend Range", 1, 48, 48, "", valToStrSemi
     ));
     params.push_back(std::make_unique<juce::AudioParameterBool>
     (
@@ -64,7 +64,7 @@ static juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout
     ));
     params.push_back(std::make_unique<juce::AudioParameterBool>
     (
-        "usesynth", "Use Synth", false
+        "usesynth", "Use Synth", true
     ));
 
     return { params.begin(), params.end() };

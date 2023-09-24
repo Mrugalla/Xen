@@ -61,8 +61,8 @@ namespace xen
 				const auto msg = it.getMessage();
 				if (msg.isNoteOn())
 				{
-					auto& processNoteOn = noteOnFuncs[static_cast<int>(type)];
-					processNoteOn(msg, buffer, xen, basePitch, masterTune, pitchbendRange, ts);
+					const auto& noteOnFunc = noteOnFuncs[static_cast<int>(type)];
+					noteOnFunc(msg, buffer, xen, basePitch, masterTune, pitchbendRange, ts);
 				}
 				else if (msg.isNoteOff())
 					processNoteOff(buffer, ts);
@@ -103,7 +103,6 @@ namespace xen
 	struct XenRescalerMPE
 	{
 		using MPE = mpe::MPESplit;
-		static constexpr int NumChannels = 16;
 		using Type = XenRescaler::Type;
 
 		XenRescalerMPE(MPE& _mpe) :
@@ -111,7 +110,6 @@ namespace xen
 			xenRescaler(),
 			mpe(_mpe)
 		{
-			buffer.ensureSize(1024);
 		}
 
 		void operator()(MidiBuffer& midiMessages,
@@ -120,11 +118,11 @@ namespace xen
 		{
 			buffer.clear();
 
-			for (auto ch = 1; ch <= NumChannels; ++ch)
+			for (auto ch = 0; ch < mpe::NumChannelsMPE; ++ch)
 			{
-				auto& midi = mpe[ch];
+				auto& rescaler = xenRescaler[ch];
+				auto& midi = mpe[ch + 2];
 
-				auto& rescaler = xenRescaler[ch - 1];
 				rescaler(midi, buffer, xen, basePitch, masterTune, pitchbendRange, type);
 			}
 
@@ -133,7 +131,7 @@ namespace xen
 
 	private:
 		MidiBuffer buffer;
-		std::array<XenRescaler, NumChannels> xenRescaler;
+		std::array<XenRescaler, mpe::NumChannelsMPE> xenRescaler;
 		MPE& mpe;
 	};
 }
