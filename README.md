@@ -1,7 +1,7 @@
 # Xen
 A VSTi that transforms input MIDI to polyphonic xenharmonic MPE MIDI.
 
-
+It does this by mapping the pitch from the xen scale to the closest MIDI note and adding a pitch bend event to bend this note to the desired pitch. Because each note needs to have its own amount of pitch bending, polyphonic inputs are played on separate MIDI channels (MPE).
 
 Parameters
 
