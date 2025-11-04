@@ -4,9 +4,9 @@
               addUsingNamespaceToJuceHeader="0" jucerFormatVersion="1" pluginFormats="buildAU,buildStandalone,buildVST3"
               pluginCharacteristicsValue="pluginIsSynth,pluginProducesMidiOut,pluginWantsMidiIn"
               pluginName="Xen" pluginDesc="Converts MIDI to different xen scales"
-              pluginManufacturer="Beats Basteln" pluginManufacturerCode="BB69"
-              pluginCode="XXEN" pluginAUMainType="'aumi'" companyName="Beats Basteln"
-              pluginVST3Category="Synth" pluginAAXCategory="8192" pluginVSTCategory="kPlugCategEffect"
+              pluginManufacturer="Mrugalla" pluginManufacturerCode="BB69" pluginCode="XXEN"
+              pluginAUMainType="'aumi'" companyName="Mrugalla" pluginVST3Category="Synth,Tools"
+              pluginAAXCategory="8192" pluginVSTCategory="kPlugCategEffect"
               cppLanguageStandard="latest">
   <MAINGROUP id="iQHhpP" name="Xen">
     <GROUP id="{EF050444-C99D-795A-9E5A-B91D22D1C738}" name="Source">
