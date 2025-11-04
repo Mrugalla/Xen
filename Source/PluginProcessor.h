@@ -2,70 +2,42 @@
 #define oopsie(condition) jassert(!(condition))
 
 #include <JuceHeader.h>
-#include "MPESplit.h"
 #include "AutoMPE.h"
-#include "Synth.h"
-#include "XenRescaler.h"
-#include "NoteDelay.h"
-#include "MTSXen.h"
+#include "Xen.h"
 
-class XenAudioProcessor : public juce::AudioProcessor
+struct XenAudioProcessor : public juce::AudioProcessor
                             #if JucePlugin_Enable_ARA
                              , public juce::AudioProcessorARAExtension
                             #endif
 {
-public:
-    //==============================================================================
     XenAudioProcessor();
     ~XenAudioProcessor() override;
-
-    //==============================================================================
     void prepareToPlay (double, int) override;
     void releaseResources() override;
-
    #ifndef JucePlugin_PreferredChannelConfigurations
     bool isBusesLayoutSupported (const BusesLayout&) const override;
    #endif
-
     void processBlock (juce::AudioBuffer<float>&, juce::MidiBuffer&) override;
-
-    //==============================================================================
     juce::AudioProcessorEditor* createEditor() override;
     bool hasEditor() const override;
-
-    //==============================================================================
     const juce::String getName() const override;
-
     bool acceptsMidi() const override;
     bool producesMidi() const override;
     bool isMidiEffect() const override;
     double getTailLengthSeconds() const override;
-
-    //==============================================================================
     int getNumPrograms() override;
     int getCurrentProgram() override;
     void setCurrentProgram (int) override;
     const juce::String getProgramName (int) override;
     void changeProgramName (int, const juce::String&) override;
-
-    //==============================================================================
     void getStateInformation (juce::MemoryBlock&) override;
     void setStateInformation (const void*, int) override;
 
-
     juce::AudioProcessorValueTreeState apvts;
-    juce::RangedAudioParameter &mode, &xen, &basePitch, &masterTune, &pbRange, &playMode, &useSynth;
-
+    juce::RangedAudioParameter &mode, &xen, &anchorPitch, &anchorFreq, &pbRange, &stepsIn12;
     mpe::AutoMPE autoMPEProcessor;
-    mpe::MPESplit mpeSplit;
-
-    mts::Xen mtsXen;
-
-    syn::Synth synth;
-    xen::XenRescalerMPE xenRescaler;
-    bool mtsEnabled;
-
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (XenAudioProcessor)
+    mpe::Split mpeSplit;
+    xen::Xen xenProcessor;
 };
 
 /*
@@ -82,7 +54,7 @@ workflow:
 
 Tested in Synths:
     vital       >> works, but on session reopen doesn't remember mpe enabled despite showing it as enabled
-    serum       >> works
+    serum(2)    >> works
     karp        >> works
     surge       >> works
 

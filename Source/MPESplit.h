@@ -3,12 +3,12 @@
 
 namespace mpe
 {
-	struct MPESplit
+	struct Split
 	{
 		static constexpr int Size = NumChannels + 1;
 		using Buffers = std::array<MidiBuffer, Size>;
 
-		MPESplit() :
+		Split() :
 			buffers()
 		{
 		}

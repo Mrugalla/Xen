@@ -15,26 +15,19 @@ namespace xen
 		static constexpr double PBRangeHalf = PBRange / 2.;
 	public:
 		XenRescaler() :
-			curNote(MidiMessage::noteOn(1, 0, Unit8(0)))
+			curNote(MidiMessage::noteOn(1, 0, Unit8(0))),
+			pbRange(0.)
 		{
 		}
 
-		void operator()(MidiBuffer& midi, MidiBuffer& buffer,
-			double xen, double anchorPitch, double anchorFreq,
-			double pitchbendRange, bool stepsIn12)
+		void update(double _pbRange) noexcept
 		{
-			const auto func = stepsIn12 ? [](double pitch,
-				double xen, double anchorPitch, double anchorFreq,
-				double pitchbendRange, int ts)
-				{
-					return math::noteToFreqIn12Steps(pitch, xen, anchorPitch, anchorFreq);
-				} : [](double pitch,
-					double xen, double anchorPitch, double anchorFreq,
-					double pitchbendRange, int ts)
-				{
-					return math::noteToFreq(pitch, xen, anchorPitch, anchorFreq);
-				};
+			pbRange = _pbRange;
+		}
 
+		void operator()(MidiBuffer& midi, MidiBuffer& buffer,
+			const double* freqTable)
+		{
 			for (const auto it : midi)
 			{
 				const auto ts = it.samplePosition;
@@ -43,9 +36,9 @@ namespace xen
 				{
 					const auto channel = msg.getChannel();
 					const auto velo = msg.getFloatVelocity();
-					const auto pitch = static_cast<double>(msg.getNoteNumber());
-					const auto freq = func(pitch, xen, anchorPitch, anchorFreq, pitchbendRange, ts);
-					processNoteOn(buffer, velo, freq, pitchbendRange, channel, ts);
+					const auto pitch = msg.getNoteNumber();
+					const auto freq = freqTable[pitch];
+					processNoteOn(buffer, velo, freq, pbRange, channel, ts);
 				}
 				else if (msg.isNoteOff())
 					processNoteOff(buffer, ts);
@@ -56,6 +49,7 @@ namespace xen
 	
 	private:
 		MidiMessage curNote;
+		double pbRange;
 
 		void processNoteOn(MidiBuffer& buffer, float velocity,
 			double freq, double pitchbendRange, int channel, int ts)
@@ -84,7 +78,7 @@ namespace xen
 
 	struct XenRescalerMPE
 	{
-		using MPE = mpe::MPESplit;
+		using MPE = mpe::Split;
 
 		XenRescalerMPE(MPE& _mpe) :
 			buffer(),
@@ -93,17 +87,21 @@ namespace xen
 		{
 		}
 
+		void update(double pbRange) noexcept
+		{
+			for (auto& voice : xenRescaler)
+				voice.update(pbRange);
+		}
+
 		void operator()(MidiBuffer& midiMessages,
-			double xen, double anchorPitch, double anchorFreq,
-			double pitchbendRange, int numSamples, bool stepsIn12)
+			const double* freqTable, int numSamples)
 		{
 			buffer.clear();
 			for (auto ch = 0; ch < mpe::NumChannelsMPE; ++ch)
 			{
 				auto& rescaler = xenRescaler[ch];
 				auto& midi = mpe[ch + 2];
-
-				rescaler(midi, buffer, xen, anchorPitch, anchorFreq, pitchbendRange, stepsIn12);
+				rescaler(midi, buffer, freqTable);
 			}
 			midiMessages.addEvents(buffer, 0, numSamples, 0);
 		}

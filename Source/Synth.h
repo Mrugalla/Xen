@@ -60,8 +60,6 @@ namespace syn
 			bool noteOn;
 		};
 	public:
-		using PitchesArray = std::array<double, 128>;
-
 		Voice() :
 			osc(),
 			curNote(0)
@@ -74,13 +72,13 @@ namespace syn
 			curNote = 0;
 		}
 
-		void update(const PitchesArray& pitches) noexcept
+		void update(const double* freqTable) noexcept
 		{
-			osc.setFreqHz(pitches[curNote]);
+			osc.setFreqHz(freqTable[curNote]);
 		}
 
 		void synthMPE(float* smpls, const MidiBuffer& midiIn,
-			const PitchesArray& pitches, int numSamples) noexcept
+			const double* freqTable, int numSamples) noexcept
 		{
 			auto s = 0;
 			for (const auto it : midiIn)
@@ -94,7 +92,7 @@ namespace syn
 					if (msg.isNoteOn())
 					{
 						curNote = msg.getNoteNumber();
-						const auto freq = pitches[curNote];
+						const auto freq = freqTable[curNote];
 						osc.setFreqHz(freq);
 						osc.noteOn = true;
 					}
@@ -146,17 +144,12 @@ namespace syn
 
 	struct Synth
 	{
-		using MPE = mpe::MPESplit;
+		using MPE = mpe::Split;
 
 		Synth(MPE& _mpe) :
-			pitches(),
 			mtsClient(MTS_RegisterClient()),
 			voices(),
-			mpe(_mpe),
-			xen(0.),
-			anchorPitch(69.),
-			anchorFreq(440.),
-			useNearest(false)
+			mpe(_mpe)
 		{}
 
 		~Synth()
@@ -164,40 +157,19 @@ namespace syn
 			MTS_DeregisterClient(mtsClient);
 		}
 
-		void updateParameters(double _xen, double _anchorPitch, double _anchorFreq, bool _useNearest) noexcept
+		void update(const double* freqTable) noexcept
 		{
-			if(xen == _xen &&
-			   anchorPitch == _anchorPitch &&
-			   anchorFreq == _anchorFreq &&
-			   useNearest == _useNearest)
-				return;
-			xen = _xen;
-			anchorPitch = _anchorPitch;
-			anchorFreq = _anchorFreq;
-			useNearest = _useNearest;
-			const auto freqFunc = useNearest ?
-				[](double pitch, double xen, double anchorPitch, double anchorFreq)
-				{
-					return math::noteToFreqIn12Steps(pitch, xen, anchorPitch, anchorFreq);
-				} :
-				[](double pitch, double xen, double anchorPitch, double anchorFreq)
-					{
-						return math::noteToFreq(pitch, xen, anchorPitch, anchorFreq);
-					};
-				for (int i = 0; i < 128; ++i)
-					pitches[i] = freqFunc(static_cast<double>(i), xen, anchorPitch, anchorFreq);
 			for(auto& voice: voices)
-				voice.update(pitches);
+				voice.update(freqTable);
 		}
 
 		void prepare(double sampleRate) noexcept
 		{
 			for (auto& voice : voices)
 				voice.prepare(sampleRate);
-			xen = 0.;
 		}
 
-		void synthMPE(float* const* samples, int numSamples) noexcept
+		void synthMPE(float* const* samples, const double* freqTable, int numSamples) noexcept
 		{
 			clear(samples, numSamples);
 			for (auto ch = 0; ch < mpe::NumChannelsMPE; ++ch)
@@ -206,7 +178,7 @@ namespace syn
 				const auto& midi = mpe[ch + 2];
 				voice.synthMPE
 				(
-					samples[0], midi, pitches, numSamples
+					samples[0], midi, freqTable, numSamples
 				);
 			}
 			copy(samples, numSamples);
@@ -227,12 +199,9 @@ namespace syn
 			copy(samples, numSamples);
 		}
 	private:
-		Voice::PitchesArray pitches;
 		MTSClient* mtsClient;
 		std::array<Voice, mpe::NumChannelsMPE> voices;
 		MPE& mpe;
-		double xen, anchorPitch, anchorFreq;
-		bool useNearest;
 
 		void clear(float* const* samples, int numSamples) noexcept
 		{

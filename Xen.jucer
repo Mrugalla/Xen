@@ -58,8 +58,6 @@
       <FILE id="XiUpnR" name="Axiom.cpp" compile="1" resource="0" file="Source/Axiom.cpp"/>
       <FILE id="xHihCs" name="Axiom.h" compile="0" resource="0" file="Source/Axiom.h"/>
       <FILE id="dgkzOI" name="Math.h" compile="0" resource="0" file="Source/Math.h"/>
-      <FILE id="lgyy9G" name="MTSXen.cpp" compile="1" resource="0" file="Source/MTSXen.cpp"/>
-      <FILE id="znrvJy" name="MTSXen.h" compile="0" resource="0" file="Source/MTSXen.h"/>
       <FILE id="IMHc7D" name="MPEUtils.h" compile="0" resource="0" file="Source/MPEUtils.h"/>
       <FILE id="y5BjrH" name="MPESplit.h" compile="0" resource="0" file="Source/MPESplit.h"/>
       <FILE id="q7ARql" name="AutoMPE.h" compile="0" resource="0" file="Source/AutoMPE.h"/>
@@ -67,7 +65,8 @@
       <FILE id="LnPTcF" name="Range.cpp" compile="1" resource="0" file="Source/Range.cpp"/>
       <FILE id="afcfsU" name="Range.h" compile="0" resource="0" file="Source/Range.h"/>
       <FILE id="homd6S" name="XenRescaler.h" compile="0" resource="0" file="Source/XenRescaler.h"/>
-      <FILE id="Hbx2Bl" name="NoteDelay.h" compile="0" resource="0" file="Source/NoteDelay.h"/>
+      <FILE id="S9WkXI" name="Xen.cpp" compile="1" resource="0" file="Source/Xen.cpp"/>
+      <FILE id="k8xypX" name="Xen.h" compile="0" resource="0" file="Source/Xen.h"/>
       <FILE id="NY6uE1" name="PluginProcessor.cpp" compile="1" resource="0"
             file="Source/PluginProcessor.cpp"/>
       <FILE id="Uaazuj" name="PluginProcessor.h" compile="0" resource="0"
