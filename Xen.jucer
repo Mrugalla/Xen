@@ -6,14 +6,66 @@
               pluginName="Xen" pluginDesc="Converts MIDI to different xen scales"
               pluginManufacturer="Beats Basteln" pluginManufacturerCode="BB69"
               pluginCode="XXEN" pluginAUMainType="'aumi'" companyName="Beats Basteln"
-              pluginVST3Category="Synth" pluginAAXCategory="8192" pluginVSTCategory="kPlugCategEffect">
+              pluginVST3Category="Synth" pluginAAXCategory="8192" pluginVSTCategory="kPlugCategEffect"
+              cppLanguageStandard="latest">
   <MAINGROUP id="iQHhpP" name="Xen">
     <GROUP id="{EF050444-C99D-795A-9E5A-B91D22D1C738}" name="Source">
+      <GROUP id="{FEE2C95E-B7BC-3C7C-6ECA-8CFB08902A1F}" name="mts">
+        <GROUP id="{38896AA4-134A-4225-D7CE-8D008AA5C013}" name="Client">
+          <FILE id="OZEtFU" name="libMTSClient.cpp" compile="1" resource="0"
+                file="Source/mts/Client/libMTSClient.cpp"/>
+          <FILE id="dIi0kD" name="libMTSClient.h" compile="0" resource="0" file="Source/mts/Client/libMTSClient.h"/>
+        </GROUP>
+        <GROUP id="{BF94F93C-624D-0D30-3D49-54FEFD5506A2}" name="libMTS">
+          <GROUP id="{CE5A2072-2A08-9119-EA33-4A7FB5F47E98}" name="Linux">
+            <GROUP id="{220A5863-7613-F08B-CF1A-A16FA3A8EDCA}" name="x86_64">
+              <FILE id="LF6faY" name="libMTS.so" compile="0" resource="1" file="Source/mts/libMTS/Linux/x86_64/libMTS.so"/>
+            </GROUP>
+          </GROUP>
+          <GROUP id="{A13B8BA1-B239-B73A-4593-D789672FFC08}" name="Mac">
+            <GROUP id="{341565AE-E91E-BD2D-7EAD-916637EFB4C6}" name="i386_x86_64">
+              <FILE id="GyENDX" name="libMTS.dylib" compile="0" resource="1" file="Source/mts/libMTS/Mac/i386_x86_64/libMTS.dylib"/>
+              <FILE id="ffaqRb" name="libMTSMacIntel_v1.03.pkg" compile="0" resource="1"
+                    file="Source/mts/libMTS/Mac/i386_x86_64/libMTSMacIntel_v1.03.pkg"/>
+            </GROUP>
+            <GROUP id="{D64E990D-F276-925A-9469-6878A4649EC3}" name="x86_64_ARM">
+              <FILE id="uM1rx6" name="libMTS.dylib" compile="0" resource="1" file="Source/mts/libMTS/Mac/x86_64_ARM/libMTS.dylib"/>
+              <FILE id="WsX0Ev" name="libMTSMac_v1.03.pkg" compile="0" resource="1"
+                    file="Source/mts/libMTS/Mac/x86_64_ARM/libMTSMac_v1.03.pkg"/>
+            </GROUP>
+          </GROUP>
+          <GROUP id="{EF927AA4-787C-6668-3D89-FD5F76C87BD7}" name="Win">
+            <GROUP id="{3BB37262-A554-259F-76B7-78EB59F6B56C}" name="32bit">
+              <FILE id="Sr3nqC" name="LIBMTS.dll" compile="0" resource="1" file="Source/mts/libMTS/Win/32bit/LIBMTS.dll"/>
+            </GROUP>
+            <GROUP id="{E2515C9B-B32B-8CA2-BFA4-4236A4BE3A54}" name="64bit">
+              <FILE id="SpHPIW" name="LIBMTS.dll" compile="0" resource="1" file="Source/mts/libMTS/Win/64bit/LIBMTS.dll"/>
+            </GROUP>
+            <FILE id="U0KzM0" name="libMTSWin_v1.03.exe" compile="0" resource="1"
+                  file="Source/mts/libMTS/Win/libMTSWin_v1.03.exe"/>
+          </GROUP>
+          <FILE id="chBZIh" name="CHANGELOG.md" compile="0" resource="1" file="Source/mts/libMTS/CHANGELOG.md"/>
+          <FILE id="rRZEPH" name="MTS-ESP.conf" compile="0" resource="1" file="Source/mts/libMTS/MTS-ESP.conf"/>
+        </GROUP>
+        <GROUP id="{FD807C44-11D2-37DA-2F93-9A7354137568}" name="Master">
+          <FILE id="nR4a91" name="libMTSMaster.cpp" compile="1" resource="0"
+                file="Source/mts/Master/libMTSMaster.cpp"/>
+          <FILE id="jXLx3h" name="libMTSMaster.h" compile="0" resource="0" file="Source/mts/Master/libMTSMaster.h"/>
+        </GROUP>
+        <FILE id="a5Ikv7" name="LICENSE" compile="0" resource="1" file="Source/mts/LICENSE"/>
+        <FILE id="c7gm0Z" name="README.md" compile="0" resource="1" file="Source/mts/README.md"/>
+      </GROUP>
+      <FILE id="XiUpnR" name="Axiom.cpp" compile="1" resource="0" file="Source/Axiom.cpp"/>
+      <FILE id="xHihCs" name="Axiom.h" compile="0" resource="0" file="Source/Axiom.h"/>
       <FILE id="dgkzOI" name="Math.h" compile="0" resource="0" file="Source/Math.h"/>
+      <FILE id="lgyy9G" name="MTSXen.cpp" compile="1" resource="0" file="Source/MTSXen.cpp"/>
+      <FILE id="znrvJy" name="MTSXen.h" compile="0" resource="0" file="Source/MTSXen.h"/>
       <FILE id="IMHc7D" name="MPEUtils.h" compile="0" resource="0" file="Source/MPEUtils.h"/>
       <FILE id="y5BjrH" name="MPESplit.h" compile="0" resource="0" file="Source/MPESplit.h"/>
       <FILE id="q7ARql" name="AutoMPE.h" compile="0" resource="0" file="Source/AutoMPE.h"/>
       <FILE id="lE52WJ" name="Synth.h" compile="0" resource="0" file="Source/Synth.h"/>
+      <FILE id="LnPTcF" name="Range.cpp" compile="1" resource="0" file="Source/Range.cpp"/>
+      <FILE id="afcfsU" name="Range.h" compile="0" resource="0" file="Source/Range.h"/>
       <FILE id="homd6S" name="XenRescaler.h" compile="0" resource="0" file="Source/XenRescaler.h"/>
       <FILE id="Hbx2Bl" name="NoteDelay.h" compile="0" resource="0" file="Source/NoteDelay.h"/>
       <FILE id="NY6uE1" name="PluginProcessor.cpp" compile="1" resource="0"

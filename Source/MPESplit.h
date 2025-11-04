@@ -17,14 +17,12 @@ namespace mpe
 		{
 			for (auto& buffer : buffers)
 				buffer.clear();
-
 			for (const auto it : midiIn)
 			{
 				const auto msg = it.getMessage();
 				const auto ch = msg.getChannel();
 				buffers[ch].addEvent(msg, it.samplePosition);
 			}
-
 			midiIn.swapWith(buffers[kSysex]);
 		}
 
@@ -37,7 +35,6 @@ namespace mpe
 		{
 			return buffers[ch];
 		}
-
 	protected:
 		Buffers buffers;
 	};

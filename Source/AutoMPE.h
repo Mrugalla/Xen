@@ -29,7 +29,6 @@ namespace mpe
 		void operator()(MidiBuffer& midiMessages)
 		{
 			buffer.clear();
-			
 			for(const auto it : midiMessages)
 			{
 				auto msg = it.getMessage();
@@ -41,7 +40,6 @@ namespace mpe
 				
 				buffer.addEvent(msg, it.samplePosition);
 			}
-
 			midiMessages.swapWith(buffer);
 		}
 

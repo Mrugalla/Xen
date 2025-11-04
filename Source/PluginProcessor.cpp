@@ -1,4 +1,6 @@
 #include "PluginProcessor.h"
+#include "Axiom.h"
+#include "Range.h"
 
 static juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout()
 {
@@ -13,20 +15,29 @@ static juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout
             return s.getIntValue() != 0;
         };
 
-    const auto valToStrPlayMode = [](bool e, int)
+    const auto valToStrMode = [](bool e, int)
     {
-        return e ? juce::String("Nearest") : juce::String("Rescale");
+        return juce::String(e ? "MTS-ESP" : "MPE");
     };
 
     const auto valToStrPitch = [](int note, int)
 	{
-            return juce::MidiMessage::getMidiNoteName(note, true, true, 3) + " [" + juce::String(note) + "]";
+        return juce::MidiMessage::getMidiNoteName(note, true, true, 3) + " [" + juce::String(note) + "]";
 	};
 
-    const auto valToStrHzInt = [](int hz, int)
+    const auto valToStrHzInt = [](int pitch, int)
 	{
+		const auto pitchD = static_cast<double>(pitch);
+		const auto hz = math::noteToFreq(pitchD);
 		return juce::String(hz) + "hz";
 	};
+
+    const auto strToValHzInt = [](const juce::String& s)
+        {
+            auto valHz = static_cast<double>(s.getFloatValue());
+            auto valPitch = static_cast<int>(std::round(math::freqToNote(valHz)));
+            return valPitch;
+        };
 
     const auto valToStrXen = [](int xen, int)
     {
@@ -38,33 +49,44 @@ static juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout
         return juce::String(semi) + " semi";
     };
 
-    params.push_back(std::make_unique<juce::AudioParameterInt>
+    const auto atr = juce::AudioParameterBoolAttributes();
+
+    params.push_back(std::make_unique<juce::AudioParameterBool>
     (
-        "xen", "Xen", 4, 48, 12, "", valToStrXen
+        "mode", "Mode", true, atr
     ));
+	const auto atrXen = juce::AudioParameterIntAttributes().withStringFromValueFunction(valToStrXen);
     params.push_back(std::make_unique<juce::AudioParameterInt>
     (
-        "basepitch", "Base Pitch", 0, 127, 69, "", valToStrPitch
+        "xen", "Xen", axiom::MinXen, axiom::MaxXen, 12, atrXen
     ));
+	const auto atrAnchorPitch = juce::AudioParameterIntAttributes().withStringFromValueFunction(valToStrPitch);
     params.push_back(std::make_unique<juce::AudioParameterInt>
     (
-		"mastertune", "Master Tune", 420, 460, 440, "", valToStrHzInt
+        "anchorpitch", "Anchor Pitch", 0, 127, 69, atrAnchorPitch
+    ));
+    const auto pitchMin = static_cast<int>(std::round(math::freqToNote(20.)));
+    const auto pitchMax = static_cast<int>(std::round(math::freqToNote(20000.)));
+	const auto pitchDefault = static_cast<int>(std::round(math::freqToNote(440.)));
+	const auto atrAnchorFreq = juce::AudioParameterIntAttributes()
+        .withStringFromValueFunction(valToStrHzInt)
+	    .withValueFromStringFunction(strToValHzInt);
+    params.push_back(std::make_unique<juce::AudioParameterInt>
+    (
+		"anchorfreq", "Anchor Freq", pitchMin, pitchMax, pitchDefault, atrAnchorFreq
 	));
+	const auto atrPBRange = juce::AudioParameterIntAttributes().withStringFromValueFunction(valToStrSemi);
     params.push_back(std::make_unique<juce::AudioParameterInt>
     (
-        "pbrange", "Pitchbend Range", 1, 48, 48, "", valToStrSemi
+        "pbrange", "Pitchbend Range", 1, 48, 48, atrPBRange
     ));
     params.push_back(std::make_unique<juce::AudioParameterBool>
     (
-        "autompe", "Auto MPE", true
+        "stepsIn12", "Steps In 12", false, atr
     ));
     params.push_back(std::make_unique<juce::AudioParameterBool>
     (
-        "playmode", "Play Mode", false, "", valToStrPlayMode
-    ));
-    params.push_back(std::make_unique<juce::AudioParameterBool>
-    (
-        "usesynth", "Use Synth", true
+        "usesynth", "Use Synth", true, atr
     ));
 
     return { params.begin(), params.end() };
@@ -81,27 +103,31 @@ XenAudioProcessor::XenAudioProcessor()
                      #endif
                        ),
     apvts(*this, nullptr, JucePlugin_Name, createParameterLayout()),
+	mode(*apvts.getParameter("mode")),
     xen(*apvts.getParameter("xen")),
-    basePitch(*apvts.getParameter("basepitch")),
-    masterTune(*apvts.getParameter("mastertune")),
+    basePitch(*apvts.getParameter("anchorpitch")),
+    masterTune(*apvts.getParameter("anchorfreq")),
     pbRange(*apvts.getParameter("pbrange")),
-    autoMPE(*apvts.getParameter("autompe")),
-    playMode(*apvts.getParameter("playmode")),
+    playMode(*apvts.getParameter("stepsIn12")),
     useSynth(*apvts.getParameter("usesynth")),
 
     autoMPEProcessor(),
     mpeSplit(),
+    mtsXen(),
     synth(mpeSplit),
-    xenRescaler(mpeSplit)
+    xenRescaler(mpeSplit),
+    mtsEnabled(false)
 #endif
 {
+    if(MTS_CanRegisterMaster())
+		MTS_RegisterMaster();
 }
 
 XenAudioProcessor::~XenAudioProcessor()
 {
+    MTS_DeregisterMaster();
 }
 
-//==============================================================================
 const juce::String XenAudioProcessor::getName() const
 {
     return JucePlugin_Name;
@@ -109,40 +135,27 @@ const juce::String XenAudioProcessor::getName() const
 
 bool XenAudioProcessor::acceptsMidi() const
 {
-   #if JucePlugin_WantsMidiInput
     return true;
-   #else
-    return false;
-   #endif
 }
 
 bool XenAudioProcessor::producesMidi() const
 {
-   #if JucePlugin_ProducesMidiOutput
     return true;
-   #else
-    return false;
-   #endif
 }
 
 bool XenAudioProcessor::isMidiEffect() const
 {
-   #if JucePlugin_IsMidiEffect
-    return true;
-   #else
     return false;
-   #endif
 }
 
 double XenAudioProcessor::getTailLengthSeconds() const
 {
-    return 0.0;
+    return 0.;
 }
 
 int XenAudioProcessor::getNumPrograms()
 {
-    return 1;   // NB: some hosts don't cope very well if you tell them there are 0 programs,
-                // so this should be at least 1, even if you're not really implementing programs.
+    return 1;
 }
 
 int XenAudioProcessor::getCurrentProgram()
@@ -174,19 +187,10 @@ void XenAudioProcessor::releaseResources()
 
 bool XenAudioProcessor::isBusesLayoutSupported(const BusesLayout& layouts) const
 {
-    const auto mono = juce::AudioChannelSet::mono();
     const auto stereo = juce::AudioChannelSet::stereo();
     const auto mainOut = layouts.getMainOutputChannelSet();
-    
-    if (mainOut != mono && mainOut != stereo)
+    if (mainOut != stereo)
 		return false;
-
-#if !JucePlugin_IsSynth
-    const auto mainIn = layouts.getMainInputChannelSet();
-    if (mainIn != mono && mainIn != stereo)
-        return false;
-#endif
-
     return true;
 }
 
@@ -198,29 +202,43 @@ void XenAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::Mid
     if (numSamples == 0)
         return;
     auto samples = buffer.getArrayOfWritePointers();
-    const auto numChannels = buffer.getNumChannels();
-    for (auto ch = 0; ch < numChannels; ++ch)
-        juce::FloatVectorOperations::clear(samples[ch], numSamples);
-
-    const auto useSynthVal = useSynth.getValue() > .5f;
-    const auto playModeVal = playMode.getValue() > .5f;
-    const auto autoMPEVal = autoMPE.getValue() > .5f;
-    const auto pbRangeVal = static_cast<double>(pbRange.convertFrom0to1(pbRange.getValue()));
-    
-    const auto xenVal = static_cast<double>(xen.convertFrom0to1(xen.getValue()));
-    const auto basePitchVal = static_cast<double>(basePitch.convertFrom0to1(basePitch.getValue()));
-    const auto masterTuneVal = static_cast<double>(masterTune.convertFrom0to1(masterTune.getValue()));
-
-    if (autoMPEVal)
-        autoMPEProcessor(midiMessages);
-
+    {
+		const auto totalNumOutputChannels = getTotalNumOutputChannels();
+		const auto totalNumInputChannels = getTotalNumInputChannels();
+		for (auto i = totalNumOutputChannels; i < totalNumInputChannels; ++i)
+			buffer.clear(i, 0, numSamples);
+    }
+    autoMPEProcessor(midiMessages);
     mpeSplit(midiMessages);
 
-    if (useSynthVal)
-        synth(samples, xenVal, basePitchVal, masterTuneVal, numChannels, numSamples, playModeVal);
-    
-    const auto type = playModeVal ? xen::XenRescalerMPE::Type::Nearest : xen::XenRescalerMPE::Type::Rescale;
-    xenRescaler(midiMessages, xenVal, basePitchVal, masterTuneVal, pbRangeVal, numSamples, type);
+    const auto playSynth = useSynth.getValue() > .5f;
+    const auto stepsIn12 = playMode.getValue() > .5f;
+    const auto xenVal = static_cast<double>(xen.convertFrom0to1(xen.getValue()));
+    const auto basePitchVal = static_cast<double>(basePitch.convertFrom0to1(basePitch.getValue()));
+    const auto masterTuneVal = static_cast<double>(math::noteToFreq(masterTune.convertFrom0to1(masterTune.getValue())));
+
+    const bool _mtsEnabled = mode.getValue() > .5f;
+    if (_mtsEnabled)
+    {
+        if (!mtsEnabled)
+        {
+            mtsEnabled = true;
+            mtsXen.reset();
+        }
+        mtsXen(xenVal, basePitchVal, masterTuneVal, stepsIn12);
+        if (playSynth)
+            synth.synthMTS(samples, numSamples);
+        return;
+    }
+    // MPE processing:
+    mtsEnabled = false;
+    if (playSynth)
+    {
+		synth.updateParameters(xenVal, basePitchVal, masterTuneVal, stepsIn12);
+        synth.synthMPE(samples, numSamples);
+    }
+    const auto pbRangeVal = static_cast<double>(pbRange.convertFrom0to1(pbRange.getValue()));
+    xenRescaler(midiMessages, xenVal, basePitchVal, masterTuneVal, pbRangeVal, numSamples, stepsIn12);
 }
 
 bool XenAudioProcessor::hasEditor() const

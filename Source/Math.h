@@ -4,32 +4,24 @@
 
 namespace math
 {
-	double noteToFreq(double note, double xen = 12., double basePitch = 69., double masterTune = 440.) noexcept
+	static constexpr double Pi = 3.1415926535897932384626433832795;
+	static constexpr double Tau = 2. * Pi;
+
+	inline double noteToFreq(double note, double xen = 12., double anchorPitch = 69., double anchorFreq = 440.) noexcept
 	{
-		return masterTune * std::exp2((note - basePitch) / xen);
+		return anchorFreq * std::exp2((note - anchorPitch) / xen);
 	}
 
-	double freqToNote(double freq, double xen = 12., double basePitch = 69., double masterTune = 440.) noexcept
+	inline double freqToNote(double freq, double xen = 12., double anchorPitch = 69., double anchorFreq = 440.) noexcept
 	{
-		return basePitch + xen * std::log2(freq / masterTune);
+		return anchorPitch + xen * std::log2(freq / anchorFreq);
 	}
 
-	double closestFreq(double freq, double xen = 12., double basePitch = 69., double masterTune = 440.) noexcept
+	inline double noteToFreqIn12Steps(double note, double xen = 12., double anchorPitch = 69., double anchorFreq = 440.) noexcept
 	{
-		auto closestFreq = 0.;
-		auto closestDist = std::numeric_limits<double>::max();
-
-		for (auto note = 0; note < 128; ++note)
-		{
-			const auto nFreq = noteToFreq(static_cast<double>(note), xen, basePitch, masterTune);
-			const auto nDist = std::abs(freq - nFreq);
-			if (nDist < closestDist)
-			{
-				closestDist = nDist;
-				closestFreq = nFreq;
-			}
-		}
-
-		return closestFreq;
+		const auto freq12 = noteToFreq(note, 12., 69., anchorFreq);
+		const auto noteXen = freqToNote(freq12, xen, anchorPitch, anchorFreq);
+		const auto closest = std::round(noteXen);
+		return noteToFreq(closest, xen, anchorPitch, anchorFreq);
 	}
 }

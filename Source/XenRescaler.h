@@ -11,58 +11,41 @@ namespace xen
 
 	class XenRescaler
 	{
-		using NoteOnFunc = std::function<void(const MidiMessage&, MidiBuffer&,
-			double, double, double, double, int)>;
-		using NoteOnFuncs = std::array<NoteOnFunc, 2>;
-
 		static constexpr double PBRange = 16383.;
 		static constexpr double PBRangeHalf = PBRange / 2.;
-	
 	public:
-		enum class Type
-		{
-			Rescale,
-			Nearest
-		};
-
 		XenRescaler() :
-			curNote(MidiMessage::noteOn(1, 0, Unit8(0))),
-			noteOnFuncs()
+			curNote(MidiMessage::noteOn(1, 0, Unit8(0)))
 		{
-			noteOnFuncs[static_cast<int>(Type::Rescale)] = [&](const MidiMessage& msg, MidiBuffer& buffer,
-				double xen, double basePitch, double masterTune,
-				double pitchbendRange, int ts)
-			{
-				const auto channel = msg.getChannel();
-				const auto noteNumber = static_cast<double>(msg.getNoteNumber());
-				const auto freq = math::noteToFreq(noteNumber, xen, basePitch, masterTune);
-				processNoteOn(buffer, msg.getFloatVelocity(), freq, pitchbendRange, channel, ts);
-			};
-
-			noteOnFuncs[static_cast<int>(Type::Nearest)] = [&](const MidiMessage& msg, MidiBuffer& buffer,
-				double xen, double basePitch, double masterTune,
-				double pitchbendRange, int ts)
-			{
-				const auto channel = msg.getChannel();
-				const auto noteNumber = static_cast<double>(msg.getNoteNumber());
-				const auto freq = math::noteToFreq(noteNumber);
-				const auto cFreq = math::closestFreq(freq, xen, basePitch, masterTune);
-				processNoteOn(buffer, msg.getFloatVelocity(), cFreq, pitchbendRange, channel, ts);
-			};
 		}
 
 		void operator()(MidiBuffer& midi, MidiBuffer& buffer,
-			double xen, double basePitch, double masterTune,
-			double pitchbendRange, Type type)
+			double xen, double anchorPitch, double anchorFreq,
+			double pitchbendRange, bool stepsIn12)
 		{
+			const auto func = stepsIn12 ? [](double pitch,
+				double xen, double anchorPitch, double anchorFreq,
+				double pitchbendRange, int ts)
+				{
+					return math::noteToFreqIn12Steps(pitch, xen, anchorPitch, anchorFreq);
+				} : [](double pitch,
+					double xen, double anchorPitch, double anchorFreq,
+					double pitchbendRange, int ts)
+				{
+					return math::noteToFreq(pitch, xen, anchorPitch, anchorFreq);
+				};
+
 			for (const auto it : midi)
 			{
 				const auto ts = it.samplePosition;
 				const auto msg = it.getMessage();
 				if (msg.isNoteOn())
 				{
-					const auto& noteOnFunc = noteOnFuncs[static_cast<int>(type)];
-					noteOnFunc(msg, buffer, xen, basePitch, masterTune, pitchbendRange, ts);
+					const auto channel = msg.getChannel();
+					const auto velo = msg.getFloatVelocity();
+					const auto pitch = static_cast<double>(msg.getNoteNumber());
+					const auto freq = func(pitch, xen, anchorPitch, anchorFreq, pitchbendRange, ts);
+					processNoteOn(buffer, velo, freq, pitchbendRange, channel, ts);
 				}
 				else if (msg.isNoteOff())
 					processNoteOff(buffer, ts);
@@ -73,7 +56,6 @@ namespace xen
 	
 	private:
 		MidiMessage curNote;
-		NoteOnFuncs noteOnFuncs;
 
 		void processNoteOn(MidiBuffer& buffer, float velocity,
 			double freq, double pitchbendRange, int channel, int ts)
@@ -103,7 +85,6 @@ namespace xen
 	struct XenRescalerMPE
 	{
 		using MPE = mpe::MPESplit;
-		using Type = XenRescaler::Type;
 
 		XenRescalerMPE(MPE& _mpe) :
 			buffer(),
@@ -113,19 +94,17 @@ namespace xen
 		}
 
 		void operator()(MidiBuffer& midiMessages,
-			double xen, double basePitch, double masterTune,
-			double pitchbendRange, int numSamples, Type type)
+			double xen, double anchorPitch, double anchorFreq,
+			double pitchbendRange, int numSamples, bool stepsIn12)
 		{
 			buffer.clear();
-
 			for (auto ch = 0; ch < mpe::NumChannelsMPE; ++ch)
 			{
 				auto& rescaler = xenRescaler[ch];
 				auto& midi = mpe[ch + 2];
 
-				rescaler(midi, buffer, xen, basePitch, masterTune, pitchbendRange, type);
+				rescaler(midi, buffer, xen, anchorPitch, anchorFreq, pitchbendRange, stepsIn12);
 			}
-
 			midiMessages.addEvents(buffer, 0, numSamples, 0);
 		}
 
