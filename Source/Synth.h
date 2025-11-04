@@ -1,4 +1,5 @@
 #pragma once
+#include <juce_events/juce_events.h>
 #include <functional>
 #include "MPESplit.h"
 #include "Math.h"
@@ -6,6 +7,7 @@
 
 namespace syn
 {
+	using MPE = mpe::Split;
 	using MidiBuffer = juce::MidiBuffer;
 	using MidiMessage = juce::MidiMessage;
 
@@ -144,13 +146,12 @@ namespace syn
 
 	struct Synth
 	{
-		using MPE = mpe::Split;
-
 		Synth(MPE& _mpe) :
 			mtsClient(MTS_RegisterClient()),
 			voices(),
 			mpe(_mpe)
-		{}
+		{
+		}
 
 		~Synth()
 		{
