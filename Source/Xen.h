@@ -46,7 +46,7 @@ namespace xen
 		void timerCallback() override
 		{
 			if (MTS_CanRegisterMaster())
-				mtsClient = MTS_RegisterClient();
+				MTS_RegisterMaster();
 		}
 
 		void updateParameters(double _xen, double _anchorPitch, double _anchorFreq,
