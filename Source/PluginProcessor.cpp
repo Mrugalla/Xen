@@ -2,7 +2,7 @@
 #include "Axiom.h"
 #include "Range.h"
 
-static juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout()
+juce::AudioProcessorValueTreeState::ParameterLayout XenAudioProcessor::createParameters()
 {
     std::vector<std::unique_ptr<juce::RangedAudioParameter>> params;
 
@@ -39,9 +39,13 @@ static juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout
             return valPitch;
         };
 
-    const auto valToStrXen = [](int xen, int)
+    const auto valToStrXen = [&](float xen, int)
     {
-		return juce::String(xen) + " edo";
+		const auto xFloor = std::floor(xen);
+        const auto xFrac = xen - xFloor;
+        if (xFrac == 0.f)
+            return juce::String(static_cast<int>(xFloor)) + " tet";
+        return juce::String(xen, 2) + " tet";
 	};
 
     const auto valToStrSemi = [](int semi, int)
@@ -50,21 +54,33 @@ static juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout
     };
 
     const auto atr = juce::AudioParameterBoolAttributes();
-
-	const auto atrMode = juce::AudioParameterBoolAttributes().withStringFromValueFunction(valToStrMode);
     params.push_back(std::make_unique<juce::AudioParameterBool>
     (
-        "mode", "Mode", true, atrMode
+        "xensnap", "Xen Snap", true, atr
     ));
-	const auto atrXen = juce::AudioParameterIntAttributes().withStringFromValueFunction(valToStrXen);
-    params.push_back(std::make_unique<juce::AudioParameterInt>
+	const auto atrXen = juce::AudioParameterFloatAttributes().withStringFromValueFunction(valToStrXen);
+	const auto xenMinF = static_cast<float>(axiom::MinXen);
+	const auto xenMaxF = static_cast<float>(axiom::MaxXen);
+	const auto xenRange = xenMaxF - xenMinF;
+    const auto xenNormRange = juce::NormalisableRange<float>
     (
-        "xen", "Xen", axiom::MinXen, axiom::MaxXen, 12, atrXen
-    ));
-	const auto atrAnchorPitch = juce::AudioParameterIntAttributes().withStringFromValueFunction(valToStrPitch);
-    params.push_back(std::make_unique<juce::AudioParameterInt>
+		xenMinF, xenMaxF,
+        [xenRange](float start, float, float x)
+        {
+            return start + xenRange * x;
+        },
+        [xenRange](float start, float, float x)
+        {
+            return (x - start) / xenRange;
+        },
+        [&](float start, float end, float x)
+        {
+			return juce::jlimit(start, end, xenSnapped ? std::round(x) : x);
+        }
+	);
+    params.push_back(std::make_unique<juce::AudioParameterFloat>
     (
-        "anchorpitch", "Anchor Pitch", 0, 127, 69, atrAnchorPitch
+        "xen", "Xen", xenNormRange, 12.f, atrXen
     ));
     const auto pitchMin = static_cast<int>(std::round(math::freqToNote(20.)));
     const auto pitchMax = static_cast<int>(std::round(math::freqToNote(20000.)));
@@ -76,14 +92,20 @@ static juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout
     (
 		"anchorfreq", "Anchor Freq", pitchMin, pitchMax, pitchDefault, atrAnchorFreq
 	));
-	const auto atrPBRange = juce::AudioParameterIntAttributes().withStringFromValueFunction(valToStrSemi);
-    params.push_back(std::make_unique<juce::AudioParameterInt>
-    (
-        "pbrange", "Pitchbend Range", 1, 48, 48, atrPBRange
-    ));
+	
     params.push_back(std::make_unique<juce::AudioParameterBool>
     (
         "stepsIn12", "Steps In 12", false, atr
+    ));
+    const auto atrMode = juce::AudioParameterBoolAttributes().withStringFromValueFunction(valToStrMode);
+    params.push_back(std::make_unique<juce::AudioParameterBool>
+    (
+        "mode", "Mode", true, atrMode
+    ));
+    const auto atrPBRange = juce::AudioParameterIntAttributes().withStringFromValueFunction(valToStrSemi);
+    params.push_back(std::make_unique<juce::AudioParameterInt>
+    (
+        "pbrange", "Pitchbend Range", 1, 48, 48, atrPBRange
     ));
     return { params.begin(), params.end() };
 }
@@ -98,16 +120,17 @@ XenAudioProcessor::XenAudioProcessor()
                        .withOutput ("Output", juce::AudioChannelSet::stereo(), true)
                      #endif
                        ),
-    apvts(*this, nullptr, JucePlugin_Name, createParameterLayout()),
-	mode(*apvts.getParameter("mode")),
+    apvts(*this, nullptr, JucePlugin_Name, createParameters()),
+	xenSnap(*apvts.getParameter("xensnap")),
     xen(*apvts.getParameter("xen")),
-    anchorPitch(*apvts.getParameter("anchorpitch")),
     anchorFreq(*apvts.getParameter("anchorfreq")),
-    pbRange(*apvts.getParameter("pbrange")),
     stepsIn12(*apvts.getParameter("stepsIn12")),
+    mode(*apvts.getParameter("mode")),
+    pbRange(*apvts.getParameter("pbrange")),
     autoMPEProcessor(),
     mpeSplit(),
-    xenProcessor(mpeSplit)
+    xenProcessor(mpeSplit),
+    xenSnapped(true)
 #endif
 {
     
@@ -199,13 +222,13 @@ void XenAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::Mid
     autoMPEProcessor(midi);
     mpeSplit(midi);
 
+    xenSnapped = xenSnap.getValue() > .5f;
 	const auto xenV = xen.convertFrom0to1(xen.getValue());
-	const auto anchorPitchV = std::round(anchorPitch.convertFrom0to1(anchorPitch.getValue()));
 	const auto anchorFreqV = math::noteToFreq(anchorFreq.convertFrom0to1(anchorFreq.getValue()));
 	const auto pbRangeV = pbRange.convertFrom0to1(pbRange.getValue());
 	const auto mtsEnabledV = mode.getValue() > .5f;
 	const auto stepsIn12V = stepsIn12.getValue() > .5f;
-    xenProcessor.updateParameters(xenV, anchorPitchV, anchorFreqV, pbRangeV, mtsEnabledV, stepsIn12V);
+    xenProcessor.updateParameters(xenV, anchorFreqV, pbRangeV, mtsEnabledV, stepsIn12V);
 
 	auto samples = buffer.getArrayOfWritePointers();
     xenProcessor(samples, midi, numSamples);

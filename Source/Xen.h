@@ -24,7 +24,6 @@ namespace xen
 			Timer(),
 			freqTable(),
 			xen(0.),
-			anchorPitch(0.),
 			anchorFreq(0.),
 			pbRange(0.),
 			stepsIn12(false),
@@ -49,7 +48,7 @@ namespace xen
 				MTS_RegisterMaster();
 		}
 
-		void updateParameters(double _xen, double _anchorPitch, double _anchorFreq,
+		void updateParameters(double _xen, double _anchorFreq,
 			double _pbRange, bool _mtsEnabled, bool _stepsIn12) noexcept
 		{
 			if (_mtsEnabled)
@@ -60,12 +59,10 @@ namespace xen
 					forceUpdate();
 				}
 				if (xen != _xen ||
-					anchorPitch != _anchorPitch ||
 					anchorFreq != _anchorFreq ||
 					stepsIn12 != _stepsIn12)
 				{
 					xen = _xen;
-					anchorPitch = _anchorPitch;
 					anchorFreq = _anchorFreq;
 					stepsIn12 = _stepsIn12;
 					updateFreqTable();
@@ -78,19 +75,16 @@ namespace xen
 				{
 					mtsEnabled = false;
 					xen = 12.;
-					anchorPitch = 69.;
 					anchorFreq = 440.;
 					stepsIn12 = true;
 					updateFreqTable();
 					updateMTS();
 				}
 				if (xen != _xen ||
-					anchorPitch != _anchorPitch ||
 					anchorFreq != _anchorFreq ||
 					stepsIn12 != _stepsIn12)
 				{
 					xen = _xen;
-					anchorPitch = _anchorPitch;
 					anchorFreq = _anchorFreq;
 					stepsIn12 = _stepsIn12;
 					updateFreqTable();
@@ -117,10 +111,9 @@ namespace xen
 			synth.synthMPE(samples, freqTable, numSamples);
 			rescaler(midi, freqTable, numSamples);
 		}
-
 	private:
 		double freqTable[NumPitches];
-		double xen, anchorPitch, anchorFreq, pbRange;
+		double xen, anchorFreq, pbRange;
 		bool stepsIn12, mtsEnabled;
 
 		syn::Synth synth;
@@ -135,18 +128,18 @@ namespace xen
 		void updateFreqTable() noexcept
 		{
 			const auto hzFunc = stepsIn12 ?
-				[](double pitch, double xen, double anchorPitch, double anchorFreq)
+				[](double pitch, double xen, double anchorFreq)
 				{
-					return math::noteToFreqIn12Steps(pitch, xen, anchorPitch, anchorFreq);
+					return math::noteToFreqIn12Steps(pitch, xen, 69., anchorFreq);
 				} :
-				[](double pitch, double xen, double anchorPitch, double anchorFreq)
+				[](double pitch, double xen, double anchorFreq)
 				{
-					return math::noteToFreq(pitch, xen, anchorPitch, anchorFreq);
+					return math::noteToFreq(pitch, xen, 69., anchorFreq);
 				};
 				for (int i = 0; i < NumPitches; ++i)
 				{
 					const auto iD = static_cast<double>(i);
-					const auto hz = hzFunc(iD, xen, anchorPitch, anchorFreq);
+					const auto hz = hzFunc(iD, xen, anchorFreq);
 					freqTable[i] = hz;
 				}
 				synth.update(&freqTable[0]);
@@ -155,7 +148,21 @@ namespace xen
 		void updateMTS()
 		{
 			MTS_SetNoteTunings(freqTable);
-			name = String(xen) + " edo";
+			//step size in cents = 1200. * std::log2(2) / xen;
+			MTS_SetPeriodRatio(2.);
+			if(stepsIn12)
+			{
+				MTS_SetMapSize(12);
+			}
+			else
+			{
+				const auto xenRound = std::round(xen);
+				const auto xenChar = static_cast<char>(xenRound);
+				MTS_SetMapSize(xenChar);
+			}
+			MTS_SetRefKey(69);
+			MTS_SetMapStartKey(69 - 1);
+			name = String(xen, 2) + " tet";
 			MTS_SetScaleName(name.getCharPointer());
 		}
 	};

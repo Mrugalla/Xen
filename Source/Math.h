@@ -14,7 +14,7 @@ namespace math
 
 	inline double freqToNote(double freq, double xen = 12., double anchorPitch = 69., double anchorFreq = 440.) noexcept
 	{
-		return anchorPitch + xen * std::log2(freq / anchorFreq);
+		return xen * std::log2(freq / anchorFreq) + anchorPitch;
 	}
 
 	inline double noteToFreqIn12Steps(double note, double xen = 12., double anchorPitch = 69., double anchorFreq = 440.) noexcept
