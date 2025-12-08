@@ -5,12 +5,12 @@ This VSTi plugin allows you to globally set and modulate the tuning system via M
 
 --- Parameters ---
 
-Xen Snap: If disabled, you can explore non-octave equal temperament tuning systems.
-Xen: The equal temperament scale describes how many pitch classes per octave exist. The most common one is 12tet.
-Anchor Freq: The frequency of the note number 69 in all available tuning systems.
-Steps in 12: Instead of giving you unique pitch classes for each note, it picks the pitches that are the closest to 12tet from your tuning system.
-Pitchbend Range: If you use MPE, this parameter has to be aligned with the pb range of the target synth.
-Mode: You can either run the plugin in MPE or MTS-ESP Mode.
+1. Xen Snap: If disabled, you can explore non-octave equal temperament tuning systems.
+2. Xen: The equal temperament scale describes how many pitch classes per octave exist. The most common one is 12tet.
+3. Anchor Freq: The frequency of the note number 69 in all available tuning systems.
+4. Steps in 12: Instead of giving you unique pitch classes for each note, it picks the pitches that are the closest to 12tet from your tuning system.
+5. Pitchbend Range: If you use MPE, this parameter has to be aligned with the pb range of the target synth.
+6. Mode: You can either run the plugin in MPE or MTS-ESP Mode.
 
 How to use with MPE:
 
