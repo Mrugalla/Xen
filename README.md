@@ -21,7 +21,8 @@ How to use with MPE:
 
 How to use with MTS-ESP:
 
-1. Add Xen (instrument)
-2. Add MTS-ESP-compatible target synths (no routing needed)
+1. Install MTS-ESP on your computer: https://github.com/ODDSound/MTS-ESP
+2. Add Xen (instrument)
+3. Add MTS-ESP-compatible target synths (no routing needed)
 
 No matter if you use MPE or MTS-ESP, you can use Xen's synth to check if everything works correctly.
