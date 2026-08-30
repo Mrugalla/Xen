@@ -11,17 +11,13 @@
 
 namespace xen
 {
-	using Timer = juce::Timer;
-
-	struct Xen :
-		public Timer
+	struct Xen
 	{
 		static constexpr int NumPitches = 128;
 		using String = juce::String;
 		using Midi = juce::MidiBuffer;
 
 		Xen(mpe::Split& mpeSplit) :
-			Timer(),
 			freqTable(),
 			xen(0.),
 			anchorFreq(0.),
@@ -30,22 +26,34 @@ namespace xen
 			mtsEnabled(false),
 			synth(mpeSplit),
 			rescaler(mpeSplit),
-			name("")
+			name(""),
+			isMaster(false)
 		{
 			if (MTS_CanRegisterMaster())
+			{
 				MTS_RegisterMaster();
-			startTimerHz(1);
+				isMaster = true;
+			}
 		}
 
 		~Xen()
 		{
-			MTS_DeregisterMaster();
+			if(isMaster)
+				MTS_DeregisterMaster();
 		}
 
-		void timerCallback() override
+		void setBypassed(bool bypassed) noexcept
 		{
-			if (MTS_CanRegisterMaster())
+			if (isMaster && bypassed)
+			{
+				MTS_DeregisterMaster();
+				isMaster = false;
+			}
+			else if (!isMaster && !bypassed)
+			{
 				MTS_RegisterMaster();
+				isMaster = true;
+			}
 		}
 
 		void updateParameters(double _xen, double _anchorFreq,
@@ -115,6 +123,7 @@ namespace xen
 		double freqTable[NumPitches];
 		double xen, anchorFreq, pbRange;
 		bool stepsIn12, mtsEnabled;
+		bool isMaster;
 
 		syn::Synth synth;
 		XenRescalerMPE rescaler;

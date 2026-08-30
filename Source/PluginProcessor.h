@@ -18,6 +18,7 @@ struct XenAudioProcessor : public juce::AudioProcessor
     bool isBusesLayoutSupported (const BusesLayout&) const override;
    #endif
     void processBlock(juce::AudioBuffer<float>&, juce::MidiBuffer&) override;
+    void processBlockBypassed(juce::AudioBuffer<float>&, juce::MidiBuffer&) override;
     juce::AudioProcessorEditor* createEditor() override;
     bool hasEditor() const override;
     const juce::String getName() const override;

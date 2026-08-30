@@ -210,6 +210,7 @@ bool XenAudioProcessor::isBusesLayoutSupported(const BusesLayout& layouts) const
 void XenAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midi)
 {
     const juce::ScopedNoDenormals noDenormals;
+    xenProcessor.setBypassed(false);
     const auto numSamples = buffer.getNumSamples();
     if (numSamples == 0)
         return;
@@ -221,7 +222,6 @@ void XenAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::Mid
     }
     autoMPEProcessor(midi);
     mpeSplit(midi);
-
     xenSnapped = xenSnap.getValue() > .5f;
 	const auto xenV = xen.convertFrom0to1(xen.getValue());
 	const auto anchorFreqV = math::noteToFreq(anchorFreq.convertFrom0to1(anchorFreq.getValue()));
@@ -229,27 +229,40 @@ void XenAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer, juce::Mid
 	const auto mtsEnabledV = mode.getValue() > .5f;
 	const auto stepsIn12V = stepsIn12.getValue() > .5f;
     xenProcessor.updateParameters(xenV, anchorFreqV, pbRangeV, mtsEnabledV, stepsIn12V);
-
 	auto samples = buffer.getArrayOfWritePointers();
     xenProcessor(samples, midi, numSamples);
+}
+
+void XenAudioProcessor::processBlockBypassed(juce::AudioBuffer<float>& buffer, juce::MidiBuffer&)
+{
+    const juce::ScopedNoDenormals noDenormals;
+    xenProcessor.setBypassed(true);
+    const auto numSamples = buffer.getNumSamples();
+    if (numSamples == 0)
+        return;
+    const auto totalNumOutputChannels = getTotalNumOutputChannels();
+    const auto totalNumInputChannels = getTotalNumInputChannels();
+    for (auto i = totalNumOutputChannels; i < totalNumInputChannels; ++i)
+        buffer.clear(i, 0, numSamples);
 }
 
 bool XenAudioProcessor::hasEditor() const
 {
     return false;
 }
+
 juce::AudioProcessorEditor* XenAudioProcessor::createEditor()
 {
     return nullptr;
 }
 
-void XenAudioProcessor::getStateInformation (juce::MemoryBlock& destData)
+void XenAudioProcessor::getStateInformation(juce::MemoryBlock& destData)
 {
     auto state = apvts.copyState();
     std::unique_ptr<juce::XmlElement> xml(state.createXml());
     copyXmlToBinary(*xml, destData);
 }
-void XenAudioProcessor::setStateInformation (const void* data, int sizeInBytes)
+void XenAudioProcessor::setStateInformation(const void* data, int sizeInBytes)
 {
     std::unique_ptr<juce::XmlElement> xmlState(getXmlFromBinary(data, sizeInBytes));
     if (xmlState.get() != nullptr)
